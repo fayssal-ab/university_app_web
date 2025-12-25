@@ -1,32 +1,19 @@
 const mongoose = require('mongoose');
 
 const levelSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, 'Level name is required'],
-    unique: true,
-    trim: true
-    // Ex: "Licence 1", "Master 2"
+  name: String,
+  shortName: String,
+  branch: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Branch',
+    required: true
   },
-  shortName: {
-    type: String,
-    required: true,
-    unique: true,
-    uppercase: true,
-    trim: true
-    // Ex: "L1", "M2"
-  },
-  fields: [{
-    type: String,
-    trim: true
-    // Ex: ["Génie Informatique", "Génie Civil", "Génie Électrique"]
-  }],
-  isActive: {
-    type: Boolean,
-    default: true
-  }
-}, {
-  timestamps: true
+  academicYear: String,
+  capacity: Number
 });
+
+
+// Index for unique combination
+levelSchema.index({ shortName: 1, academicYear: 1 }, { unique: true });
 
 module.exports = mongoose.model('Level', levelSchema);

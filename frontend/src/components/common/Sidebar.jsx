@@ -9,8 +9,7 @@ import {
   FaUsers,
   FaChalkboardTeacher,
   FaCog,
-  FaFileAlt,
-  FaUpload
+  FaFileAlt
 } from 'react-icons/fa';
 
 const Sidebar = () => {
@@ -34,11 +33,10 @@ const Sidebar = () => {
 
   const adminLinks = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: FaHome },
-    { name: 'Users', path: '/admin/users', icon: FaUsers },
-    { name: 'Students', path: '/admin/students', icon: FaGraduationCap },
+      { name: 'Branches', path: '/admin/branches', icon: FaBook }, // 👈 جديد
+    { name: 'Classes', path: '/admin/classes', icon: FaGraduationCap },
     { name: 'Professors', path: '/admin/professors', icon: FaChalkboardTeacher },
     { name: 'Modules', path: '/admin/modules', icon: FaBook },
-    { name: 'Levels', path: '/admin/levels', icon: FaCog },
     { name: 'Grades', path: '/admin/grades', icon: FaFileAlt }
   ];
 
@@ -58,11 +56,17 @@ const Sidebar = () => {
   const links = getLinks();
 
   return (
-    <div className="w-64 bg-gray-900 min-h-screen text-white">
+    <div className="w-64 bg-white min-h-screen border-r border-gray-200 shadow-sm">
       <div className="p-6">
-        <h2 className="text-xl font-bold mb-6">Navigation</h2>
+        <div className="mb-8">
+          <h2 className="text-sm font-bold text-gray-600 uppercase tracking-wider mb-1">
+            Navigation
+          </h2>
+          <div className="h-1 w-12 bg-blue-600 rounded-full"></div>
+        </div>
+        
         <nav>
-          <ul className="space-y-2">
+          <ul className="space-y-1">
             {links.map((link) => {
               const Icon = link.icon;
               const isActive = location.pathname === link.path;
@@ -71,20 +75,41 @@ const Sidebar = () => {
                 <li key={link.path}>
                   <Link
                     to={link.path}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                    className={`group flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
                       isActive
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-300 hover:bg-gray-800'
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-transparent'
                     }`}
                   >
-                    <Icon size={20} />
-                    <span>{link.name}</span>
+                    <Icon 
+                      size={20} 
+                      className={`transition-all ${
+                        isActive ? '' : 'group-hover:scale-110'
+                      }`}
+                    />
+                    <span className="font-medium">{link.name}</span>
+                    {isActive && (
+                      <div className="ml-auto">
+                        <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                      </div>
+                    )}
                   </Link>
                 </li>
               );
             })}
           </ul>
         </nav>
+
+        {/* Bottom info */}
+        <div className="mt-12 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <p className="text-xs text-gray-600 text-center font-medium">
+            EMSI Platform v2.0
+          </p>
+          <div className="flex items-center justify-center mt-2 space-x-1">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-xs text-gray-500">System Online</span>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,52 +1,137 @@
 const express = require('express');
 const router = express.Router();
+
+// Controllers
 const {
   getDashboard,
-  getAllUsers,
-  createUser,
-  updateUser,
-  deleteUser,
-  getAllStudents,
+
+  // Levels (Classes)
+  getAllLevels,
+  createLevel,
+  updateLevel,
+  deleteLevel,
+  getStudentsByLevel,
+
+  // Students
+  createStudent,
+  updateStudent,
+  deleteStudent,
   enrollStudent,
+
+  // Professors
   getAllProfessors,
-  assignProfessor,
+  createProfessor,
+  updateProfessor,
+  deleteProfessor,
+  assignProfessorToModule,
+
+  // Modules
   getAllModules,
   createModule,
   updateModule,
   deleteModule,
-  getAllLevels,
-  createLevel,
-  validateGrade,
-  getAllGrades
+
+  // Grades
+  getAllGrades,
+  validateGrade
 } = require('../controllers/adminController');
+
+// ✅ Branch Controller
+const {
+  getAllBranches,
+  createBranch,
+  updateBranch,
+  deleteBranch
+} = require('../controllers/branchController');
+
+// Middleware
 const { protect } = require('../middleware/authMiddleware');
 const { isAdmin } = require('../middleware/roleMiddleware');
 
-// All routes are protected and require admin role
+/*
+|--------------------------------------------------------------------------
+| ADMIN middleware (ضروري)
+|--------------------------------------------------------------------------
+*/
 router.use(protect);
 router.use(isAdmin);
 
-// Dashboard
+/*
+|--------------------------------------------------------------------------
+| Dashboard
+|--------------------------------------------------------------------------
+*/
 router.get('/dashboard', getDashboard);
 
-// Users Management
-router.route('/users')
-  .get(getAllUsers)
-  .post(createUser);
+/*
+|--------------------------------------------------------------------------
+| ✅ BRANCHES (IMPORTANT!)
+|--------------------------------------------------------------------------
+*/
+router.route('/branches')
+  .get(getAllBranches)
+  .post(createBranch);
 
-router.route('/users/:id')
-  .put(updateUser)
-  .delete(deleteUser);
+router.route('/branches/:id')
+  .put(updateBranch)
+  .delete(deleteBranch);
 
-// Students Management
-router.get('/students', getAllStudents);
+/*
+|--------------------------------------------------------------------------
+| Levels / Classes
+|--------------------------------------------------------------------------
+*/
+router.route('/levels')
+  .get(getAllLevels)
+  .post(createLevel);
+
+router.route('/levels/:id')
+  .put(updateLevel)
+  .delete(deleteLevel);
+
+/*
+|--------------------------------------------------------------------------
+| 🔥 Students by Level (IMPORTANT)
+|--------------------------------------------------------------------------
+*/
+router.get(
+  '/levels/:levelId/students',
+  getStudentsByLevel
+);
+
+/*
+|--------------------------------------------------------------------------
+| Students
+|--------------------------------------------------------------------------
+*/
+router.post('/students', createStudent);
+
+router.route('/students/:id')
+  .put(updateStudent)
+  .delete(deleteStudent);
+
 router.post('/students/:id/enroll', enrollStudent);
 
-// Professors Management
-router.get('/professors', getAllProfessors);
-router.post('/professors/:id/assign', assignProfessor);
+/*
+|--------------------------------------------------------------------------
+| Professors
+|--------------------------------------------------------------------------
+*/
+router.route('/professors')
+  .get(getAllProfessors)
+  .post(createProfessor);
 
-// Modules Management
+router.route('/professors/:id')
+  .put(updateProfessor)
+  .delete(deleteProfessor);
+
+router.post('/professors/:id/assign', assignProfessorToModule);
+
+/*
+|--------------------------------------------------------------------------
+| Modules
+|--------------------------------------------------------------------------
+*/
 router.route('/modules')
   .get(getAllModules)
   .post(createModule);
@@ -55,12 +140,11 @@ router.route('/modules/:id')
   .put(updateModule)
   .delete(deleteModule);
 
-// Levels Management
-router.route('/levels')
-  .get(getAllLevels)
-  .post(createLevel);
-
-// Grades Management
+/*
+|--------------------------------------------------------------------------
+| Grades
+|--------------------------------------------------------------------------
+*/
 router.get('/grades', getAllGrades);
 router.patch('/grades/:id/validate', validateGrade);
 

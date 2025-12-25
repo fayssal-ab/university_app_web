@@ -56,12 +56,7 @@ const studentSchema = new mongoose.Schema({
 });
 
 // Populate user data automatically
-studentSchema.pre(/^find/, function(next) {
-  this.populate({
-    path: 'user',
-    select: 'firstName lastName email profilePicture'
-  });
-  next();
-});
+module.exports = mongoose.model('Student', studentSchema);
+
 
 module.exports = mongoose.model('Student', studentSchema);

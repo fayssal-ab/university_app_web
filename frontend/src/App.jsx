@@ -25,14 +25,16 @@ import Announcements from './pages/professor/Announcements';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
-import ManageUsers from './pages/admin/ManageUsers';
-import ManageStudents from './pages/admin/ManageStudents';
+import ManageClasses from './pages/admin/ManageClasses';
+import ClassStudents from './pages/admin/ClassStudents';
+import AddStudent from './pages/admin/AddStudent';
 import ManageProfessors from './pages/admin/ManageProfessors';
 import ManageModules from './pages/admin/ManageModules';
-import ManageLevels from './pages/admin/ManageLevels';
 import EnrollStudents from './pages/admin/EnrollStudents';
 import ValidateGrades from './pages/admin/ValidateGrades';
 import ExportGrades from './pages/admin/ExportGrades';
+import ManageBranches from './pages/admin/ManageBranches';
+
 
 function App() {
   return (
@@ -160,21 +162,40 @@ function App() {
             }
           />
           <Route
-            path="/admin/users"
+  path="/admin/branches"
+  element={
+    <RoleRoute allowedRoles={['admin']}>
+      <ManageBranches />
+    </RoleRoute>
+  }
+/>
+          {/* Classes Management */}
+          <Route
+            path="/admin/classes"
             element={
               <RoleRoute allowedRoles={['admin']}>
-                <ManageUsers />
+                <ManageClasses />
               </RoleRoute>
             }
           />
           <Route
-            path="/admin/students"
+            path="/admin/classes/:levelId/students"
             element={
               <RoleRoute allowedRoles={['admin']}>
-                <ManageStudents />
+                <ClassStudents />
               </RoleRoute>
             }
           />
+          {/* Add Student */}
+          <Route
+            path="/admin/students/add"
+            element={
+              <RoleRoute allowedRoles={['admin']}>
+                <AddStudent />
+              </RoleRoute>
+            }
+          />
+          {/* Professors Management */}
           <Route
             path="/admin/professors"
             element={
@@ -183,6 +204,7 @@ function App() {
               </RoleRoute>
             }
           />
+          {/* Modules Management */}
           <Route
             path="/admin/modules"
             element={
@@ -191,14 +213,7 @@ function App() {
               </RoleRoute>
             }
           />
-          <Route
-            path="/admin/levels"
-            element={
-              <RoleRoute allowedRoles={['admin']}>
-                <ManageLevels />
-              </RoleRoute>
-            }
-          />
+          {/* Enrollment */}
           <Route
             path="/admin/enroll"
             element={
@@ -207,6 +222,7 @@ function App() {
               </RoleRoute>
             }
           />
+          {/* Grades Management */}
           <Route
             path="/admin/grades"
             element={
@@ -215,6 +231,7 @@ function App() {
               </RoleRoute>
             }
           />
+          {/* Export */}
           <Route
             path="/admin/export"
             element={
@@ -223,12 +240,14 @@ function App() {
               </RoleRoute>
             }
           />
-      {/* Default Redirects */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
-  </Router>
-</AuthProvider>
-);
+
+          {/* Default Redirects */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
 }
+
 export default App;

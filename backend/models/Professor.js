@@ -12,22 +12,30 @@ const professorSchema = new mongoose.Schema({
     unique: true,
     uppercase: true,
     trim: true
-    // Ex: "PROF2024001"
   },
   department: {
     type: String,
     required: [true, 'Department is required'],
     trim: true
-    // Ex: "Département Informatique"
   },
   specialization: {
     type: String,
     trim: true
-    // Ex: "Intelligence Artificielle"
   },
-  assignedModules: [{
+  branches: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Module'
+    ref: 'Branch'
+  }],
+  assignedModules: [{
+    module: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Module'
+    },
+    level: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Level'
+    },
+    academicYear: String
   }],
   phoneNumber: {
     type: String,
@@ -36,18 +44,14 @@ const professorSchema = new mongoose.Schema({
   officeLocation: {
     type: String,
     trim: true
+  },
+  officeHours: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: true
 });
 
-// Populate user data automatically
-professorSchema.pre(/^find/, function(next) {
-  this.populate({
-    path: 'user',
-    select: 'firstName lastName email profilePicture'
-  });
-  next();
-});
-
+// ✅ NO PRE HOOK - Controllers handle populate manually
 module.exports = mongoose.model('Professor', professorSchema);
