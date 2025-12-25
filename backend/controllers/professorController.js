@@ -1,9 +1,10 @@
 const Professor = require('../models/Professor');
+const Student = require('../models/Student');
 const Module = require('../models/Module');
+const Grade = require('../models/Grade');
+const Notification = require('../models/Notification');
 const Assignment = require('../models/Assignment');
 const Submission = require('../models/Submission');
-const Student = require('../models/Student');
-const Notification = require('../models/Notification');
 
 // @desc    Get professor dashboard
 // @route   GET /api/professor/dashboard
@@ -11,7 +12,15 @@ const Notification = require('../models/Notification');
 const getDashboard = async (req, res) => {
   try {
     const professor = await Professor.findOne({ user: req.user._id })
-      .populate('assignedModules');
+      .populate('user', 'firstName lastName email')
+      .populate({
+        path: 'assignedModules.module',
+        select: 'code name semester coefficient'
+      })
+      .populate({
+        path: 'assignedModules.level',
+        select: 'name shortName'
+      });
 
     if (!professor) {
       return res.status(404).json({
@@ -20,7 +29,10 @@ const getDashboard = async (req, res) => {
       });
     }
 
-    const totalModules = professor.assignedModules.length;
+    const modules = await Module.find({ professor: professor._id })
+      .populate('level', 'name shortName');
+
+    const totalModules = modules.length;
 
     const totalAssignments = await Assignment.countDocuments({
       professor: professor._id
@@ -33,6 +45,15 @@ const getDashboard = async (req, res) => {
       status: 'pending'
     });
 
+    let totalStudents = 0;
+    for (const module of modules) {
+      const count = await Student.countDocuments({
+        level: module.level,
+        enrolledModules: module._id
+      });
+      totalStudents += count;
+    }
+
     res.json({
       success: true,
       data: {
@@ -40,11 +61,13 @@ const getDashboard = async (req, res) => {
         stats: {
           totalModules,
           totalAssignments,
-          pendingSubmissions
+          pendingSubmissions,
+          totalStudents
         }
       }
     });
   } catch (error) {
+    console.error('Dashboard Error:', error);
     res.status(500).json({
       success: false,
       error: error.message
@@ -57,14 +80,274 @@ const getDashboard = async (req, res) => {
 // @access  Private (Professor)
 const getModules = async (req, res) => {
   try {
-    const professor = await Professor.findOne({ user: req.user._id })
-      .populate('assignedModules');
+    const professor = await Professor.findOne({ user: req.user._id });
+
+    if (!professor) {
+      return res.status(404).json({
+        success: false,
+        error: 'Professor profile not found'
+      });
+    }
+
+    const modules = await Module.find({ professor: professor._id })
+      .populate('level', 'name shortName')
+      .populate({
+        path: 'level',
+        populate: {
+          path: 'branch',
+          select: 'name code'
+        }
+      })
+      .sort('code');
+
+    const modulesWithStats = await Promise.all(
+      modules.map(async (module) => {
+        const studentCount = await Student.countDocuments({
+          level: module.level._id,
+          enrolledModules: module._id
+        });
+
+        return {
+          ...module.toObject(),
+          studentCount
+        };
+      })
+    );
 
     res.json({
       success: true,
-      data: professor.assignedModules
+      count: modulesWithStats.length,
+      data: modulesWithStats
     });
   } catch (error) {
+    console.error('Get Modules Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+// @desc    Get students enrolled in a specific module
+// @route   GET /api/professor/modules/:moduleId/students
+// @access  Private (Professor)
+const getModuleStudents = async (req, res) => {
+  try {
+    const { moduleId } = req.params;
+    
+    const professor = await Professor.findOne({ user: req.user._id });
+
+    if (!professor) {
+      return res.status(404).json({
+        success: false,
+        error: 'Professor profile not found'
+      });
+    }
+
+    const module = await Module.findById(moduleId).populate('level');
+
+    if (!module) {
+      return res.status(404).json({
+        success: false,
+        error: 'Module not found'
+      });
+    }
+
+    if (module.professor.toString() !== professor._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        error: 'You are not authorized to view students for this module'
+      });
+    }
+
+    const students = await Student.find({
+      level: module.level._id,
+      enrolledModules: moduleId
+    })
+      .populate('user', 'firstName lastName email')
+      .populate('level', 'name shortName')
+      .sort('studentId');
+
+    const studentIds = students.map(s => s._id);
+    const grades = await Grade.find({
+      student: { $in: studentIds },
+      module: moduleId,
+      academicYear: module.academicYear
+    });
+
+    const studentsWithGrades = students.map(student => {
+      const studentGrades = grades.filter(
+        g => g.student.toString() === student._id.toString()
+      );
+
+      return {
+        ...student.toObject(),
+        grades: studentGrades
+      };
+    });
+
+    res.json({
+      success: true,
+      count: studentsWithGrades.length,
+      data: {
+        module: module,
+        students: studentsWithGrades
+      }
+    });
+  } catch (error) {
+    console.error('Get Module Students Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+// @desc    Add or update grade for a student
+// @route   POST /api/professor/grades
+// @access  Private (Professor)
+const addGrade = async (req, res) => {
+  try {
+    const { studentId, moduleId, value, semester, academicYear, gradeType, comments } = req.body;
+
+    const professor = await Professor.findOne({ user: req.user._id });
+
+    if (!professor) {
+      return res.status(404).json({
+        success: false,
+        error: 'Professor profile not found'
+      });
+    }
+
+    const module = await Module.findById(moduleId);
+    if (!module) {
+      return res.status(404).json({
+        success: false,
+        error: 'Module not found'
+      });
+    }
+
+    if (module.professor.toString() !== professor._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        error: 'You are not authorized to grade this module'
+      });
+    }
+
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        error: 'Student not found'
+      });
+    }
+
+    if (!student.enrolledModules.includes(moduleId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Student is not enrolled in this module'
+      });
+    }
+
+    if (value < 0 || value > 20) {
+      return res.status(400).json({
+        success: false,
+        error: 'Grade must be between 0 and 20'
+      });
+    }
+
+    let grade = await Grade.findOne({
+      student: studentId,
+      module: moduleId,
+      semester,
+      academicYear,
+      gradeType: gradeType || 'final'
+    });
+
+    if (grade) {
+      grade.value = value;
+      grade.comments = comments;
+      grade.validated = false;
+      grade.validatedBy = null;
+      grade.validatedAt = null;
+      await grade.save();
+    } else {
+      grade = await Grade.create({
+        student: studentId,
+        module: moduleId,
+        value,
+        semester,
+        academicYear,
+        gradeType: gradeType || 'final',
+        comments,
+        validated: false,
+        isPublished: false
+      });
+    }
+
+    await grade.populate('student module');
+
+    res.status(201).json({
+      success: true,
+      data: grade
+    });
+  } catch (error) {
+    console.error('Add Grade Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+// @desc    Get grades for a specific module
+// @route   GET /api/professor/modules/:moduleId/grades
+// @access  Private (Professor)
+const getModuleGrades = async (req, res) => {
+  try {
+    const { moduleId } = req.params;
+    const professor = await Professor.findOne({ user: req.user._id });
+
+    if (!professor) {
+      return res.status(404).json({
+        success: false,
+        error: 'Professor profile not found'
+      });
+    }
+
+    const module = await Module.findById(moduleId);
+    if (!module) {
+      return res.status(404).json({
+        success: false,
+        error: 'Module not found'
+      });
+    }
+
+    if (module.professor.toString() !== professor._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized'
+      });
+    }
+
+    const grades = await Grade.find({ module: moduleId })
+      .populate({
+        path: 'student',
+        populate: {
+          path: 'user',
+          select: 'firstName lastName email'
+        }
+      })
+      .populate('module', 'code name coefficient')
+      .sort('student');
+
+    res.json({
+      success: true,
+      count: grades.length,
+      data: grades
+    });
+  } catch (error) {
+    console.error('Get Module Grades Error:', error);
     res.status(500).json({
       success: false,
       error: error.message
@@ -114,7 +397,6 @@ const uploadMaterial = async (req, res) => {
     module.materials.push(material);
     await module.save();
 
-    // Notify students
     const students = await Student.find({ enrolledModules: module._id });
     
     const notifications = students.map(student => ({
@@ -132,6 +414,7 @@ const uploadMaterial = async (req, res) => {
       data: module
     });
   } catch (error) {
+    console.error('Upload Material Error:', error);
     res.status(500).json({
       success: false,
       error: error.message
@@ -173,7 +456,6 @@ const createAssignment = async (req, res) => {
       instructions
     });
 
-    // Notify students
     const students = await Student.find({ enrolledModules: module._id });
     
     const notifications = students.map(student => ({
@@ -195,6 +477,7 @@ const createAssignment = async (req, res) => {
       data: assignment
     });
   } catch (error) {
+    console.error('Create Assignment Error:', error);
     res.status(500).json({
       success: false,
       error: error.message
@@ -226,6 +509,14 @@ const getSubmissions = async (req, res) => {
     }
 
     const submissions = await Submission.find({ assignment: assignment._id })
+      .populate({
+        path: 'student',
+        populate: {
+          path: 'user',
+          select: 'firstName lastName email'
+        }
+      })
+      .populate('assignment', 'title maxGrade')
       .sort('-submittedAt');
 
     res.json({
@@ -233,6 +524,7 @@ const getSubmissions = async (req, res) => {
       data: submissions
     });
   } catch (error) {
+    console.error('Get Submissions Error:', error);
     res.status(500).json({
       success: false,
       error: error.message
@@ -248,7 +540,11 @@ const gradeSubmission = async (req, res) => {
     const { grade, feedback } = req.body;
 
     const submission = await Submission.findById(req.params.submissionId)
-      .populate('assignment');
+      .populate('assignment')
+      .populate({
+        path: 'student',
+        populate: { path: 'user' }
+      });
 
     if (!submission) {
       return res.status(404).json({
@@ -281,11 +577,8 @@ const gradeSubmission = async (req, res) => {
 
     await submission.save();
 
-    // Notify student
-    const student = await Student.findById(submission.student);
-    
     await Notification.create({
-      recipient: student.user,
+      recipient: submission.student.user._id,
       sender: req.user._id,
       title: 'Assignment Graded',
       message: `Your submission for "${submission.assignment.title}" has been graded: ${grade}/${submission.assignment.maxGrade}`,
@@ -301,6 +594,7 @@ const gradeSubmission = async (req, res) => {
       data: submission
     });
   } catch (error) {
+    console.error('Grade Submission Error:', error);
     res.status(500).json({
       success: false,
       error: error.message
@@ -333,7 +627,6 @@ const sendAnnouncement = async (req, res) => {
       });
     }
 
-    // Get all students in this module
     const students = await Student.find({ enrolledModules: module._id });
 
     const notifications = students.map(student => ({
@@ -351,44 +644,7 @@ const sendAnnouncement = async (req, res) => {
       message: `Announcement sent to ${students.length} students`
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-};
-
-// @desc    Get students in module
-// @route   GET /api/professor/students/:moduleId
-// @access  Private (Professor)
-const getStudentsInModule = async (req, res) => {
-  try {
-    const module = await Module.findById(req.params.moduleId);
-
-    if (!module) {
-      return res.status(404).json({
-        success: false,
-        error: 'Module not found'
-      });
-    }
-
-    const professor = await Professor.findOne({ user: req.user._id });
-
-    if (module.professor.toString() !== professor._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        error: 'Not authorized'
-      });
-    }
-
-    const students = await Student.find({ enrolledModules: module._id })
-      .populate('user', 'firstName lastName email');
-
-    res.json({
-      success: true,
-      data: students
-    });
-  } catch (error) {
+    console.error('Send Announcement Error:', error);
     res.status(500).json({
       success: false,
       error: error.message
@@ -399,10 +655,12 @@ const getStudentsInModule = async (req, res) => {
 module.exports = {
   getDashboard,
   getModules,
+  getModuleStudents,
+  addGrade,
+  getModuleGrades,
   uploadMaterial,
   createAssignment,
   getSubmissions,
   gradeSubmission,
-  sendAnnouncement,
-  getStudentsInModule
+  sendAnnouncement
 };

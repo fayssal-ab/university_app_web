@@ -13,6 +13,24 @@ const professorService = {
     return response.data;
   },
 
+  // Get students in a module
+  getModuleStudents: async (moduleId) => {
+    const response = await API.get(`/professor/modules/${moduleId}/students`);
+    return response.data;
+  },
+
+  // Get grades for a module
+  getModuleGrades: async (moduleId) => {
+    const response = await API.get(`/professor/modules/${moduleId}/grades`);
+    return response.data;
+  },
+
+  // Add or update grade
+  addGrade: async (gradeData) => {
+    const response = await API.post('/professor/grades', gradeData);
+    return response.data;
+  },
+
   // Upload material
   uploadMaterial: async (moduleId, title, description, file) => {
     const formData = new FormData();
@@ -57,12 +75,6 @@ const professorService = {
       title,
       message
     });
-    return response.data;
-  },
-
-  // Get students in module
-  getStudents: async (moduleId) => {
-    const response = await API.get(`/professor/students/${moduleId}`);
     return response.data;
   }
 };

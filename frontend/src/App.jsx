@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './utils/ProtectedRoute';
 import RoleRoute from './utils/RoleRoute';
+import MainLayout from './components/common/MainLayout';
 
 // Pages
 import Login from './pages/Login';
@@ -19,6 +20,7 @@ import Notifications from './pages/student/Notifications';
 import ProfessorDashboard from './pages/professor/ProfessorDashboard';
 import ProfessorModules from './pages/professor/MyModules';
 import ManageModule from './pages/professor/ManageModule';
+import ManageGrades from './pages/professor/ManageGrades';
 import CreateAssignment from './pages/professor/CreateAssignment';
 import ViewSubmissions from './pages/professor/ViewSubmissions';
 import Announcements from './pages/professor/Announcements';
@@ -127,6 +129,15 @@ function App() {
               </RoleRoute>
             }
           />
+          {/* NEW ROUTE FOR GRADES */}
+          <Route
+            path="/professor/modules/:moduleId/grades"
+            element={
+              <RoleRoute allowedRoles={['professor']}>
+                <ManageGrades />
+              </RoleRoute>
+            }
+          />
           <Route
             path="/professor/assignments/create"
             element={
@@ -162,13 +173,13 @@ function App() {
             }
           />
           <Route
-  path="/admin/branches"
-  element={
-    <RoleRoute allowedRoles={['admin']}>
-      <ManageBranches />
-    </RoleRoute>
-  }
-/>
+            path="/admin/branches"
+            element={
+              <RoleRoute allowedRoles={['admin']}>
+                <ManageBranches />
+              </RoleRoute>
+            }
+          />
           {/* Classes Management */}
           <Route
             path="/admin/classes"

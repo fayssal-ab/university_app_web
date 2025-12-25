@@ -9,3 +9,25 @@ export default {
   },
   plugins: [],
 }
+// Add to tailwind.config.js
+module.exports = {
+  theme: {
+    extend: {
+      animation: {
+        'shimmer': 'shimmer 2s infinite linear',
+        'marquee': 'marquee 25s linear infinite',
+        'pulse-slow': 'pulse 3s ease-in-out infinite',
+      },
+      keyframes: {
+        shimmer: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+        marquee: {
+          '0%': { transform: 'translateX(0%)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+      },
+    },
+  },
+}

@@ -3,12 +3,14 @@ const router = express.Router();
 const {
   getDashboard,
   getModules,
+  getModuleStudents,
+  addGrade,
+  getModuleGrades,
   uploadMaterial,
   createAssignment,
   getSubmissions,
   gradeSubmission,
-  sendAnnouncement,
-  getStudentsInModule
+  sendAnnouncement
 } = require('../controllers/professorController');
 const { protect } = require('../middleware/authMiddleware');
 const { isProfessor } = require('../middleware/roleMiddleware');
@@ -23,7 +25,11 @@ router.get('/dashboard', getDashboard);
 
 // Modules
 router.get('/modules', getModules);
-router.get('/students/:moduleId', getStudentsInModule);
+router.get('/modules/:moduleId/students', getModuleStudents);
+router.get('/modules/:moduleId/grades', getModuleGrades);
+
+// Grades
+router.post('/grades', addGrade);
 
 // Materials
 router.post(

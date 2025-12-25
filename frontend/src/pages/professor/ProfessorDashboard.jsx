@@ -5,20 +5,26 @@ import Navbar from '../../components/common/Navbar';
 import Sidebar from '../../components/common/Sidebar';
 import Card from '../../components/common/Card';
 import Loader from '../../components/common/Loader';
-import { FaBook, FaTasks, FaClock, FaUpload, FaBullhorn, FaChartLine, FaUsers } from 'react-icons/fa';
+import { FaBook, FaTasks, FaClock, FaBullhorn, FaChartLine, FaUsers } from 'react-icons/fa';
 
 const ProfessorDashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
+  const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboard();
+    fetchData();
   }, []);
 
-  const fetchDashboard = async () => {
+  const fetchData = async () => {
     try {
-      const response = await professorService.getDashboard();
-      setDashboardData(response.data);
+      const [dashResponse, modulesResponse] = await Promise.all([
+        professorService.getDashboard(),
+        professorService.getModules()
+      ]);
+      
+      setDashboardData(dashResponse.data);
+      setModules(modulesResponse.data || []);
     } catch (error) {
       console.error('Error fetching dashboard:', error);
     } finally {
@@ -143,22 +149,22 @@ const ProfessorDashboard = () => {
                   </Card>
                 </Link>
 
-                <Link to="/professor/grades">
+                <Link to="/professor/modules">
                   <Card className="hover:shadow-lg transition-all hover:scale-105 cursor-pointer border-2 border-transparent hover:border-orange-500">
                     <div className="text-center py-6">
                       <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <FaChartLine size={28} className="text-orange-600" />
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900">Grade Analytics</h3>
-                      <p className="text-sm text-gray-600 mt-2">View statistics</p>
+                      <h3 className="text-lg font-semibold text-gray-900">Manage Grades</h3>
+                      <p className="text-sm text-gray-600 mt-2">Grade your students</p>
                     </div>
                   </Card>
                 </Link>
               </div>
             </div>
 
-            {/* Recent Modules */}
-            {professor?.assignedModules && professor.assignedModules.length > 0 && (
+            {/* Your Modules */}
+            {modules.length > 0 && (
               <Card>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">Your Modules</h3>
@@ -167,27 +173,46 @@ const ProfessorDashboard = () => {
                   </Link>
                 </div>
                 <div className="space-y-3">
-                  {professor.assignedModules.slice(0, 3).map((assignment) => (
+                  {modules.slice(0, 5).map((module) => (
                     <div
-                      key={assignment._id}
+                      key={module._id}
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
                     >
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-3 flex-1">
                         <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                           <FaBook className="text-blue-600" size={20} />
                         </div>
-                        <div>
+                        <div className="flex-1">
                           <h4 className="font-medium text-gray-900">
-                            {assignment.module?.name || 'Module'}
+                            {module.name}
                           </h4>
-                          <p className="text-sm text-gray-500">
-                            {assignment.module?.code} • S{assignment.module?.semester} • {assignment.academicYear}
-                          </p>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <span className="text-sm text-gray-500">{module.code}</span>
+                            <span className="text-gray-300">•</span>
+                            <span className="text-sm text-gray-500">S{module.semester}</span>
+                            {module.level && (
+                              <>
+                                <span className="text-gray-300">•</span>
+                                <span className="px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-700 rounded">
+                                  {module.level.shortName}
+                                </span>
+                                {module.level.branch && (
+                                  <span className="text-xs text-gray-500">
+                                    ({module.level.branch.code})
+                                  </span>
+                                )}
+                              </>
+                            )}
+                            <span className="text-gray-300">•</span>
+                            <span className="text-sm text-gray-500">
+                              {module.studentCount || 0} students
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <Link
-                        to={`/professor/modules/${assignment.module?._id}/manage`}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+                        to={`/professor/modules/${module._id}/manage`}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
                       >
                         Manage
                       </Link>
