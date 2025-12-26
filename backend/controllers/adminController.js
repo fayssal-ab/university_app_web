@@ -769,12 +769,17 @@ const getAllGrades = async (req, res) => {
   }
 };
 
-// @desc    Validate grade
+// @desc    Validate grade (Admin only)
 // @route   PATCH /api/admin/grades/:id/validate
 // @access  Private (Admin)
 const validateGrade = async (req, res) => {
   try {
-    const grade = await Grade.findById(req.params.id);
+    const grade = await Grade.findById(req.params.id)
+      .populate({
+        path: 'student',
+        populate: { path: 'user', select: 'firstName lastName email' }
+      })
+      .populate('module', 'code name');
 
     if (!grade) {
       return res.status(404).json({
@@ -783,17 +788,40 @@ const validateGrade = async (req, res) => {
       });
     }
 
+    // Check if already validated
+    if (grade.validated) {
+      return res.status(400).json({
+        success: false,
+        error: 'Grade is already validated'
+      });
+    }
+
+    // ✅ Validate and publish the grade
     grade.validated = true;
     grade.validatedBy = req.user._id;
     grade.validatedAt = Date.now();
-    grade.isPublished = true;
+    grade.isPublished = true; // ✅ Publish so student can see it
     grade.publishedAt = Date.now();
 
     await grade.save();
 
+    // ✅ Notify student that grade is now available
+    await Notification.create({
+      recipient: grade.student.user._id,
+      sender: req.user._id,
+      title: 'Grade Published',
+      message: `Your grade for ${grade.module.name} (${grade.module.code}) has been validated and published: ${grade.value}/20`,
+      type: 'grade',
+      relatedTo: {
+        model: 'Grade',
+        id: grade._id
+      }
+    });
+
     res.json({
       success: true,
-      data: grade
+      data: grade,
+      message: 'Grade validated and published successfully'
     });
   } catch (error) {
     res.status(500).json({

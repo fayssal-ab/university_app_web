@@ -1,15 +1,13 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import ProtectedRoute from './utils/ProtectedRoute';
 import RoleRoute from './utils/RoleRoute';
-import MainLayout from './components/common/MainLayout';
 
 // Pages
 import Login from './pages/Login';
 
 // Student Pages
 import StudentDashboard from './pages/student/StudentDashboard';
-import MyModules from './pages/student/MyModules';
+import StudentModules from './pages/student/MyModules';
 import ModuleDetails from './pages/student/ModuleDetails';
 import Assignments from './pages/student/Assignments';
 import SubmitAssignment from './pages/student/SubmitAssignment';
@@ -27,16 +25,16 @@ import Announcements from './pages/professor/Announcements';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
+import ManageBranches from './pages/admin/ManageBranches';
 import ManageClasses from './pages/admin/ManageClasses';
 import ClassStudents from './pages/admin/ClassStudents';
 import AddStudent from './pages/admin/AddStudent';
+import EditStudent from './pages/admin/EditStudent';
 import ManageProfessors from './pages/admin/ManageProfessors';
 import ManageModules from './pages/admin/ManageModules';
 import EnrollStudents from './pages/admin/EnrollStudents';
-import ValidateGrades from './pages/admin/ValidateGrades';
+import ValidateGrades from './pages/admin/ValidateGrades'; // ✅ IMPORTANT
 import ExportGrades from './pages/admin/ExportGrades';
-import ManageBranches from './pages/admin/ManageBranches';
-
 
 function App() {
   return (
@@ -46,7 +44,7 @@ function App() {
           {/* Public Route */}
           <Route path="/login" element={<Login />} />
 
-          {/* STUDENT ROUTES */}
+          {/* ========== STUDENT ROUTES ========== */}
           <Route
             path="/student/dashboard"
             element={
@@ -59,7 +57,7 @@ function App() {
             path="/student/modules"
             element={
               <RoleRoute allowedRoles={['student']}>
-                <MyModules />
+                <StudentModules />
               </RoleRoute>
             }
           />
@@ -104,7 +102,7 @@ function App() {
             }
           />
 
-          {/* PROFESSOR ROUTES */}
+          {/* ========== PROFESSOR ROUTES ========== */}
           <Route
             path="/professor/dashboard"
             element={
@@ -129,7 +127,6 @@ function App() {
               </RoleRoute>
             }
           />
-          {/* NEW ROUTE FOR GRADES */}
           <Route
             path="/professor/modules/:moduleId/grades"
             element={
@@ -163,7 +160,7 @@ function App() {
             }
           />
 
-          {/* ADMIN ROUTES */}
+          {/* ========== ADMIN ROUTES ========== */}
           <Route
             path="/admin/dashboard"
             element={
@@ -180,7 +177,6 @@ function App() {
               </RoleRoute>
             }
           />
-          {/* Classes Management */}
           <Route
             path="/admin/classes"
             element={
@@ -197,7 +193,6 @@ function App() {
               </RoleRoute>
             }
           />
-          {/* Add Student */}
           <Route
             path="/admin/students/add"
             element={
@@ -206,7 +201,14 @@ function App() {
               </RoleRoute>
             }
           />
-          {/* Professors Management */}
+          <Route
+            path="/admin/students/:studentId/edit"
+            element={
+              <RoleRoute allowedRoles={['admin']}>
+                <EditStudent />
+              </RoleRoute>
+            }
+          />
           <Route
             path="/admin/professors"
             element={
@@ -215,7 +217,6 @@ function App() {
               </RoleRoute>
             }
           />
-          {/* Modules Management */}
           <Route
             path="/admin/modules"
             element={
@@ -224,7 +225,6 @@ function App() {
               </RoleRoute>
             }
           />
-          {/* Enrollment */}
           <Route
             path="/admin/enroll"
             element={
@@ -233,7 +233,7 @@ function App() {
               </RoleRoute>
             }
           />
-          {/* Grades Management */}
+          {/* ✅ VALIDATE GRADES ROUTE - IMPORTANT */}
           <Route
             path="/admin/grades"
             element={
@@ -242,7 +242,6 @@ function App() {
               </RoleRoute>
             }
           />
-          {/* Export */}
           <Route
             path="/admin/export"
             element={

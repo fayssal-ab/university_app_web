@@ -128,38 +128,68 @@ const getModules = async (req, res) => {
   }
 };
 
-// @desc    Get students enrolled in a specific module
+// @desc    Get students enrolled in a specific module (ROBUST VERSION)
 // @route   GET /api/professor/modules/:moduleId/students
 // @access  Private (Professor)
 const getModuleStudents = async (req, res) => {
   try {
     const { moduleId } = req.params;
     
+    console.log('📚 Fetching module:', moduleId);
+    
+    // ✅ Get professor
     const professor = await Professor.findOne({ user: req.user._id });
 
     if (!professor) {
+      console.log('❌ Professor not found');
       return res.status(404).json({
         success: false,
         error: 'Professor profile not found'
       });
     }
 
-    const module = await Module.findById(moduleId).populate('level');
+    console.log('👨‍🏫 Professor ID:', professor._id);
+
+    // ✅ Get module WITHOUT populate first (to avoid errors)
+    let module = await Module.findById(moduleId);
 
     if (!module) {
+      console.log('❌ Module not found:', moduleId);
       return res.status(404).json({
         success: false,
         error: 'Module not found'
       });
     }
 
-    if (module.professor.toString() !== professor._id.toString()) {
+    console.log('✅ Module found:', module.name);
+    console.log('🔍 Module professor:', module.professor);
+
+    // ✅ Check authorization (handle both ObjectId and string)
+    const moduleProfessorId = module.professor ? module.professor.toString() : null;
+    const currentProfessorId = professor._id.toString();
+
+    if (moduleProfessorId !== currentProfessorId) {
+      console.log('⛔ Authorization failed');
+      console.log('Module professor:', moduleProfessorId);
+      console.log('Current professor:', currentProfessorId);
       return res.status(403).json({
         success: false,
         error: 'You are not authorized to view students for this module'
       });
     }
 
+    // ✅ NOW populate after auth check
+    module = await Module.findById(moduleId)
+      .populate({
+        path: 'level',
+        select: 'name shortName',
+        populate: {
+          path: 'branch',
+          select: 'name code'
+        }
+      });
+
+    // ✅ Get students
     const students = await Student.find({
       level: module.level._id,
       enrolledModules: moduleId
@@ -168,42 +198,66 @@ const getModuleStudents = async (req, res) => {
       .populate('level', 'name shortName')
       .sort('studentId');
 
+    console.log('👥 Students found:', students.length);
+
+    // ✅ Get grades
     const studentIds = students.map(s => s._id);
     const grades = await Grade.find({
       student: { $in: studentIds },
-      module: moduleId,
-      academicYear: module.academicYear
+      module: moduleId
     });
 
+    console.log('📊 Grades found:', grades.length);
+
+    // ✅ Attach grades to students
     const studentsWithGrades = students.map(student => {
       const studentGrades = grades.filter(
-        g => g.student.toString() === student._id.toString()
+        g => g.student && g.student.toString() === student._id.toString()
       );
 
       return {
-        ...student.toObject(),
+        _id: student._id,
+        studentId: student.studentId,
+        user: student.user,
+        level: student.level,
+        field: student.field,
+        semester: student.semester,
+        academicYear: student.academicYear,
+        enrolledModules: student.enrolledModules,
         grades: studentGrades
       };
     });
 
+    // ✅ Return clean data
     res.json({
       success: true,
       count: studentsWithGrades.length,
       data: {
-        module: module,
+        module: {
+          _id: module._id,
+          code: module.code,
+          name: module.name,
+          description: module.description,
+          semester: module.semester,
+          level: module.level,
+          coefficient: module.coefficient,
+          academicYear: module.academicYear,
+          materials: module.materials || []
+        },
         students: studentsWithGrades
       }
     });
   } catch (error) {
-    console.error('Get Module Students Error:', error);
+    console.error('❌ ERROR in getModuleStudents:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message || 'Internal server error'
     });
   }
 };
 
-// @desc    Add or update grade for a student
+// @desc    Add or update grade for a student (NOT VALIDATED BY DEFAULT)
 // @route   POST /api/professor/grades
 // @access  Private (Professor)
 const addGrade = async (req, res) => {
@@ -256,6 +310,7 @@ const addGrade = async (req, res) => {
       });
     }
 
+    // Check if grade already exists
     let grade = await Grade.findOne({
       student: studentId,
       module: moduleId,
@@ -265,13 +320,24 @@ const addGrade = async (req, res) => {
     });
 
     if (grade) {
+      // ✅ Don't allow professor to edit if already validated
+      if (grade.validated) {
+        return res.status(403).json({
+          success: false,
+          error: 'Cannot modify a validated grade. Contact admin if changes are needed.'
+        });
+      }
+
+      // Update existing grade
       grade.value = value;
       grade.comments = comments;
-      grade.validated = false;
+      grade.validated = false; // ✅ Reset validation
       grade.validatedBy = null;
       grade.validatedAt = null;
+      grade.isPublished = false; // ✅ Not published until validated
       await grade.save();
     } else {
+      // Create new grade (NOT VALIDATED)
       grade = await Grade.create({
         student: studentId,
         module: moduleId,
@@ -280,8 +346,8 @@ const addGrade = async (req, res) => {
         academicYear,
         gradeType: gradeType || 'final',
         comments,
-        validated: false,
-        isPublished: false
+        validated: false, // ✅ NOT validated by default
+        isPublished: false // ✅ NOT published by default
       });
     }
 
@@ -289,7 +355,8 @@ const addGrade = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      data: grade
+      data: grade,
+      message: 'Grade saved successfully. Waiting for admin validation.'
     });
   } catch (error) {
     console.error('Add Grade Error:', error);
@@ -662,5 +729,5 @@ module.exports = {
   createAssignment,
   getSubmissions,
   gradeSubmission,
-  sendAnnouncement
+  sendAnnouncement,
 };

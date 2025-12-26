@@ -33,23 +33,28 @@ const gradeSchema = new mongoose.Schema({
     enum: ['exam', 'continuous', 'final'],
     default: 'final'
   },
+  // ✅ NOT VALIDATED BY DEFAULT (Professor adds, Admin validates)
   validated: {
     type: Boolean,
     default: false
   },
   validatedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    default: null
   },
   validatedAt: {
-    type: Date
+    type: Date,
+    default: null
   },
-  publishedAt: {
-    type: Date
-  },
+  // ✅ NOT PUBLISHED BY DEFAULT (Only published when validated)
   isPublished: {
     type: Boolean,
     default: false
+  },
+  publishedAt: {
+    type: Date,
+    default: null
   },
   comments: {
     type: String,
@@ -59,20 +64,8 @@ const gradeSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Populate student and module
-gradeSchema.pre(/^find/, function(next) {
-  this.populate({
-    path: 'student',
-    populate: {
-      path: 'user',
-      select: 'firstName lastName email'
-    }
-  }).populate({
-    path: 'module',
-    select: 'code name coefficient'
-  });
-  next();
-});
+// ✅ REMOVED AUTO-POPULATE - Will populate manually in controllers when needed
+// This prevents the "next is not a function" error
 
 // Prevent duplicate grades for same student/module/semester
 gradeSchema.index({ student: 1, module: 1, semester: 1, academicYear: 1, gradeType: 1 }, { unique: true });

@@ -1,6 +1,3 @@
-// ========================================
-// Sidebar.jsx - Updated with all your pages
-// ========================================
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -9,7 +6,6 @@ import {
   FaTasks,
   FaGraduationCap,
   FaBell,
-  FaChalkboardTeacher,
   FaFileAlt,
   FaBullhorn,
   FaUsers,
@@ -19,9 +15,6 @@ import {
   FaUniversity,
   FaUserTie,
   FaUpload,
-  FaListAlt,
-  FaCalendarAlt,
-  FaFileUpload,
   FaEye
 } from 'react-icons/fa';
 import { useState } from 'react';
@@ -31,13 +24,10 @@ const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
   const [hoveredLink, setHoveredLink] = useState(null);
 
-  // جميع الروابط الموجودة في مشروعك
   const studentLinks = [
     { name: 'Dashboard', path: '/student/dashboard', icon: FaHome },
     { name: 'My Modules', path: '/student/modules', icon: FaBook },
-    { name: 'Module Details', path: '/student/module/:id', icon: FaBook, dynamic: true },
     { name: 'Assignments', path: '/student/assignments', icon: FaTasks },
-    { name: 'Submit Assignment', path: '/student/submit/:id', icon: FaFileUpload, dynamic: true },
     { name: 'My Grades', path: '/student/grades', icon: FaGraduationCap },
     { name: 'Notifications', path: '/student/notifications', icon: FaBell }
   ];
@@ -45,35 +35,30 @@ const Sidebar = ({ isOpen, onClose }) => {
   const professorLinks = [
     { name: 'Dashboard', path: '/professor/dashboard', icon: FaHome },
     { name: 'My Modules', path: '/professor/modules', icon: FaBook },
-    { name: 'Manage Module', path: '/professor/module/:id', icon: FaBook, dynamic: true },
     { name: 'Create Assignment', path: '/professor/assignments/create', icon: FaTasks },
-    { name: 'View Submissions', path: '/professor/submissions/:id', icon: FaEye, dynamic: true },
-    { name: 'Manage Grades', path: '/professor/grades', icon: FaGraduationCap },
-    { name: 'Announcements', path: '/professor/announcements', icon: FaBullhorn },
-    { name: 'Material Upload', path: '/professor/material/upload', icon: FaUpload }
+    { name: 'Announcements', path: '/professor/announcements', icon: FaBullhorn }
   ];
 
   const adminLinks = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: FaHome },
     { name: 'Manage Branches', path: '/admin/branches', icon: FaUniversity },
     { name: 'Manage Classes', path: '/admin/classes', icon: FaGraduationCap },
-    { name: 'Class Students', path: '/admin/class/:id/students', icon: FaUsers, dynamic: true },
-    { name: 'Manage Professors', path: '/admin/professors', icon: FaUserTie },
     { name: 'Add Student', path: '/admin/students/add', icon: FaUserPlus },
+    { name: 'Manage Professors', path: '/admin/professors', icon: FaUserTie },
     { name: 'Manage Modules', path: '/admin/modules', icon: FaBook },
     { name: 'Enroll Students', path: '/admin/enroll', icon: FaUsers },
-    { name: 'Validate Grades', path: '/admin/grades/validate', icon: FaCheckCircle },
-    { name: 'Export Grades', path: '/admin/grades/export', icon: FaFileExport }
+    { name: 'Validate Grades', path: '/admin/grades', icon: FaCheckCircle },
+    { name: 'Export Grades', path: '/admin/export', icon: FaFileExport }
   ];
 
   const getLinks = () => {
     switch (user?.role) {
       case 'student':
-        return studentLinks.filter(link => !link.dynamic); // إظهار الروابط الثابتة فقط
+        return studentLinks;
       case 'professor':
-        return professorLinks.filter(link => !link.dynamic);
+        return professorLinks;
       case 'admin':
-        return adminLinks.filter(link => !link.dynamic);
+        return adminLinks;
       default:
         return [];
     }

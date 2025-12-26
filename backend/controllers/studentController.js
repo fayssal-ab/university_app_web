@@ -297,13 +297,23 @@ const getGrades = async (req, res) => {
   try {
     const student = await Student.findOne({ user: req.user._id });
 
-    const grades = await Grade.find({
-      student: student._id,
-      isPublished: true
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        error: 'Student profile not found'
+      });
+    }
+
+    // ✅ Fetch ALL grades (both validated and pending) for analysis
+    const allGrades = await Grade.find({
+      student: student._id
     }).populate('module').sort('-createdAt');
 
-    // Calculate semester average
-    const semesterGrades = grades.filter(g => 
+    // ✅ Filter: Only VALIDATED and PUBLISHED grades for student view
+    const validatedGrades = allGrades.filter(g => g.validated && g.isPublished);
+
+    // Calculate semester average (only from validated grades)
+    const semesterGrades = validatedGrades.filter(g => 
       g.semester === student.semester && 
       g.academicYear === student.academicYear
     );
@@ -315,8 +325,8 @@ const getGrades = async (req, res) => {
       semesterAverage = weightedSum / totalCoef;
     }
 
-    // Calculate yearly average (both semesters)
-    const yearlyGrades = grades.filter(g => g.academicYear === student.academicYear);
+    // Calculate yearly average (both semesters, only validated)
+    const yearlyGrades = validatedGrades.filter(g => g.academicYear === student.academicYear);
     let yearlyAverage = 0;
     if (yearlyGrades.length > 0) {
       const totalCoef = yearlyGrades.reduce((sum, g) => sum + (g.module.coefficient || 1), 0);
@@ -327,7 +337,7 @@ const getGrades = async (req, res) => {
     res.json({
       success: true,
       data: {
-        grades,
+        grades: allGrades, // ✅ Return all grades (frontend will filter)
         semesterAverage: semesterAverage.toFixed(2),
         yearlyAverage: yearlyAverage.toFixed(2)
       }

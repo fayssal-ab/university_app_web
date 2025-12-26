@@ -25,10 +25,12 @@ router.get('/dashboard', getDashboard);
 
 // Modules
 router.get('/modules', getModules);
+
+// ✅ THIS IS THE IMPORTANT ROUTE - Get module with students
 router.get('/modules/:moduleId/students', getModuleStudents);
-router.get('/modules/:moduleId/grades', getModuleGrades);
 
 // Grades
+router.get('/modules/:moduleId/grades', getModuleGrades);
 router.post('/grades', addGrade);
 
 // Materials

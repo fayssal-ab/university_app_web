@@ -5,7 +5,7 @@ import Navbar from '../../components/common/Navbar';
 import Sidebar from '../../components/common/Sidebar';
 import Card from '../../components/common/Card';
 import Loader from '../../components/common/Loader';
-import { FaGraduationCap, FaChalkboardTeacher, FaBook, FaUsers } from 'react-icons/fa';
+import { FaGraduationCap, FaChalkboardTeacher, FaBook, FaUsers, FaCheckCircle } from 'react-icons/fa';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
@@ -118,7 +118,7 @@ const AdminDashboard = () => {
               <Link to="/admin/grades">
                 <Card className="hover:shadow-lg transition cursor-pointer">
                   <div className="text-center py-6">
-                    <FaGraduationCap size={48} className="mx-auto text-green-600 mb-4" />
+                    <FaCheckCircle size={48} className="mx-auto text-green-600 mb-4" />
                     <h3 className="text-lg font-semibold text-gray-900">Validate Grades</h3>
                     <p className="text-sm text-gray-600 mt-2">Review and validate grades</p>
                   </div>

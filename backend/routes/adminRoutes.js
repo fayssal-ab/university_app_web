@@ -13,6 +13,7 @@ const {
   getStudentsByLevel,
 
   // Students
+  getAllStudents,
   createStudent,
   updateStudent,
   deleteStudent,
@@ -36,7 +37,7 @@ const {
   validateGrade
 } = require('../controllers/adminController');
 
-// ✅ Branch Controller
+// Branch Controller
 const {
   getAllBranches,
   createBranch,
@@ -50,7 +51,7 @@ const { isAdmin } = require('../middleware/roleMiddleware');
 
 /*
 |--------------------------------------------------------------------------
-| ADMIN middleware (ضروري)
+| ADMIN middleware (required for all routes)
 |--------------------------------------------------------------------------
 */
 router.use(protect);
@@ -65,7 +66,7 @@ router.get('/dashboard', getDashboard);
 
 /*
 |--------------------------------------------------------------------------
-| ✅ BRANCHES (IMPORTANT!)
+| BRANCHES
 |--------------------------------------------------------------------------
 */
 router.route('/branches')
@@ -91,20 +92,19 @@ router.route('/levels/:id')
 
 /*
 |--------------------------------------------------------------------------
-| 🔥 Students by Level (IMPORTANT)
+| Students by Level
 |--------------------------------------------------------------------------
 */
-router.get(
-  '/levels/:levelId/students',
-  getStudentsByLevel
-);
+router.get('/levels/:levelId/students', getStudentsByLevel);
 
 /*
 |--------------------------------------------------------------------------
 | Students
 |--------------------------------------------------------------------------
 */
-router.post('/students', createStudent);
+router.route('/students')
+  .get(getAllStudents)
+  .post(createStudent);
 
 router.route('/students/:id')
   .put(updateStudent)

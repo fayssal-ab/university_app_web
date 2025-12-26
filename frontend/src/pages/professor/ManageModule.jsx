@@ -15,6 +15,7 @@ const ManageModule = () => {
   const [students, setStudents] = useState([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchModuleData();
@@ -22,13 +23,23 @@ const ManageModule = () => {
 
   const fetchModuleData = async () => {
     try {
-      // Get module with students
+      setLoading(true);
+      setError(null);
+      
+      // ✅ Correct API call
       const response = await professorService.getModuleStudents(moduleId);
-      setModuleData(response.data.module);
-      setStudents(response.data.students);
+      
+      console.log('Module Data Response:', response); // Debug
+      
+      if (response.success) {
+        setModuleData(response.data.module);
+        setStudents(response.data.students);
+      } else {
+        setError('Failed to load module data');
+      }
     } catch (error) {
       console.error('Error fetching module data:', error);
-      alert('Failed to load module data');
+      setError(error.response?.data?.error || 'Failed to load module data');
     } finally {
       setLoading(false);
     }
@@ -48,16 +59,50 @@ const ManageModule = () => {
 
   if (loading) return <Loader />;
 
-  if (!moduleData) {
+  if (error) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-gray-50">
         <Navbar />
         <div className="flex">
           <Sidebar />
           <main className="flex-1 p-8">
-            <div className="text-center py-12">
-              <p className="text-gray-500">Module not found</p>
-            </div>
+            <Card className="max-w-2xl mx-auto">
+              <div className="text-center py-12">
+                <div className="text-red-500 text-5xl mb-4">⚠️</div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Module</h2>
+                <p className="text-gray-600 mb-4">{error}</p>
+                <Link
+                  to="/professor/modules"
+                  className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Back to Modules
+                </Link>
+              </div>
+            </Card>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (!moduleData) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="flex">
+          <Sidebar />
+          <main className="flex-1 p-8">
+            <Card className="max-w-2xl mx-auto">
+              <div className="text-center py-12">
+                <p className="text-gray-500">Module not found</p>
+                <Link
+                  to="/professor/modules"
+                  className="mt-4 inline-block text-blue-600 hover:text-blue-800"
+                >
+                  ← Back to Modules
+                </Link>
+              </div>
+            </Card>
           </main>
         </div>
       </div>
@@ -67,7 +112,7 @@ const ManageModule = () => {
   const module = moduleData;
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="flex">
         <Sidebar />
@@ -81,14 +126,14 @@ const ManageModule = () => {
               <div className="flex space-x-3">
                 <button
                   onClick={() => setShowUploadModal(true)}
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                 >
                   <FaUpload />
                   <span>Upload Material</span>
                 </button>
                 <Link
                   to={`/professor/modules/${moduleId}/grades`}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
                 >
                   <FaChartLine />
                   <span>Manage Grades</span>

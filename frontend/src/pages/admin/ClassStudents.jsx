@@ -13,26 +13,22 @@ const ClassStudents = () => {
   const [students, setStudents] = useState([]);
   const [levelInfo, setLevelInfo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedField, setSelectedField] = useState('');
 
   useEffect(() => {
     fetchStudents();
-  }, [levelId, selectedField]);
+  }, [levelId]);
 
   const fetchStudents = async () => {
     try {
       const response = await adminService.getStudentsByLevel(levelId);
-
-// response راه array مباشرة
-setStudents(Array.isArray(response) ? response : []);
-
+      setStudents(Array.isArray(response) ? response : []);
       
       if (response.length > 0 && response[0].level) {
-  setLevelInfo(response[0].level);
-}
-
+        setLevelInfo(response[0].level);
+      }
     } catch (error) {
       console.error('Error fetching students:', error);
+      setStudents([]);
     } finally {
       setLoading(false);
     }
@@ -51,9 +47,6 @@ setStudents(Array.isArray(response) ? response : []);
     }
   };
 
-  // Get unique fields from students
-  const fields = [...new Set(students.map(s => s.field))].filter(Boolean);
-
   if (loading) return <Loader />;
 
   return (
@@ -67,7 +60,7 @@ setStudents(Array.isArray(response) ? response : []);
             <div className="mb-6">
               <button
                 onClick={() => navigate('/admin/classes')}
-                className="flex items-center text-blue-600 hover:text-blue-700 mb-4"
+                className="flex items-center text-blue-600 hover:text-blue-700 mb-4 transition"
               >
                 <FaArrowLeft className="mr-2" />
                 Back to Classes
@@ -92,25 +85,6 @@ setStudents(Array.isArray(response) ? response : []);
               </div>
             </div>
 
-            {/* Filters */}
-            {fields.length > 1 && (
-              <Card className="mb-6">
-                <div className="flex items-center space-x-4">
-                  <label className="text-sm font-medium text-gray-700">Filter by Field:</label>
-                  <select
-                    value={selectedField}
-                    onChange={(e) => setSelectedField(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">All Fields</option>
-                    {fields.map((field, index) => (
-                      <option key={index} value={field}>{field}</option>
-                    ))}
-                  </select>
-                </div>
-              </Card>
-            )}
-
             {/* Students List */}
             <Card>
               <div className="overflow-x-auto">
@@ -127,9 +101,6 @@ setStudents(Array.isArray(response) ? response : []);
                         Field
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Semester
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                         Modules
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -143,7 +114,7 @@ setStudents(Array.isArray(response) ? response : []);
                   <tbody className="bg-white divide-y divide-gray-200">
                     {students.length === 0 ? (
                       <tr>
-                        <td colSpan="7" className="px-6 py-12 text-center">
+                        <td colSpan="6" className="px-6 py-12 text-center">
                           <div className="flex flex-col items-center">
                             <FaUser className="text-gray-400 text-4xl mb-3" />
                             <p className="text-gray-500">No students found in this class</p>
@@ -175,9 +146,6 @@ setStudents(Array.isArray(response) ? response : []);
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {student.field}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            Semester {student.semester}
-                          </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="px-3 py-1 text-xs font-semibold text-blue-600 bg-blue-100 rounded-full">
                               {student.enrolledModules?.length || 0} modules
@@ -197,13 +165,13 @@ setStudents(Array.isArray(response) ? response : []);
                           <td className="px-6 py-4 whitespace-nowrap text-sm space-x-3">
                             <button
                               onClick={() => navigate(`/admin/students/${student._id}/edit`)}
-                              className="text-blue-600 hover:text-blue-800"
+                              className="text-blue-600 hover:text-blue-800 transition"
                             >
                               <FaEdit size={18} />
                             </button>
                             <button
                               onClick={() => handleDelete(student._id)}
-                              className="text-red-600 hover:text-red-800"
+                              className="text-red-600 hover:text-red-800 transition"
                             >
                               <FaTrash size={18} />
                             </button>

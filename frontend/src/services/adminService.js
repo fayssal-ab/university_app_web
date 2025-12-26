@@ -9,19 +9,19 @@ const adminService = {
 
   // ==================== BRANCHES ====================
   getAllBranches: async () => {
-    const response = await api.get('/admin/branches'); // ✅ Changed from /branches
+    const response = await api.get('/admin/branches');
     return response.data;
   },
   createBranch: async (data) => {
-    const response = await api.post('/admin/branches', data); // ✅ Changed from /branches
+    const response = await api.post('/admin/branches', data);
     return response.data;
   },
   updateBranch: async (id, data) => {
-    const response = await api.put(`/admin/branches/${id}`, data); // ✅ Changed
+    const response = await api.put(`/admin/branches/${id}`, data);
     return response.data;
   },
   deleteBranch: async (id) => {
-    const response = await api.delete(`/admin/branches/${id}`); // ✅ Changed
+    const response = await api.delete(`/admin/branches/${id}`);
     return response.data;
   },
 
