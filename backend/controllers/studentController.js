@@ -1,7 +1,5 @@
 const Student = require('../models/Student');
 const Module = require('../models/Module');
-const Assignment = require('../models/Assignment');
-const Submission = require('../models/Submission');
 const Grade = require('../models/Grade');
 const Notification = require('../models/Notification');
 
@@ -23,11 +21,6 @@ const getDashboard = async (req, res) => {
 
     // Get statistics
     const totalModules = student.enrolledModules.length;
-    
-    const pendingAssignments = await Assignment.countDocuments({
-      module: { $in: student.enrolledModules },
-      deadline: { $gte: new Date() }
-    });
 
     const unreadNotifications = await Notification.countDocuments({
       recipient: req.user._id,
@@ -55,7 +48,6 @@ const getDashboard = async (req, res) => {
         student,
         stats: {
           totalModules,
-          pendingAssignments,
           unreadNotifications,
           average: average.toFixed(2)
         }
@@ -130,9 +122,6 @@ const getModuleDetails = async (req, res) => {
       });
     }
 
-    // Get assignments for this module
-    const assignments = await Assignment.find({ module: module._id });
-
     // Get student's grade for this module
     const grade = await Grade.findOne({
       student: student._id,
@@ -146,141 +135,8 @@ const getModuleDetails = async (req, res) => {
       success: true,
       data: {
         module,
-        assignments,
         grade
       }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-};
-
-// @desc    Get all assignments
-// @route   GET /api/student/assignments
-// @access  Private (Student)
-const getAssignments = async (req, res) => {
-  try {
-    const student = await Student.findOne({ user: req.user._id });
-
-    const assignments = await Assignment.find({
-      module: { $in: student.enrolledModules }
-    }).sort('-createdAt');
-
-    // Get student's submissions
-    const submissions = await Submission.find({
-      student: student._id,
-      assignment: { $in: assignments.map(a => a._id) }
-    });
-
-    // Map submissions to assignments
-    const assignmentsWithStatus = assignments.map(assignment => {
-      const submission = submissions.find(s => 
-        s.assignment.toString() === assignment._id.toString()
-      );
-      
-      return {
-        ...assignment.toObject(),
-        submission: submission || null,
-        status: submission ? submission.status : 'not_submitted'
-      };
-    });
-
-    res.json({
-      success: true,
-      data: assignmentsWithStatus
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-};
-
-// @desc    Submit assignment
-// @route   POST /api/student/submit/:assignmentId
-// @access  Private (Student)
-const submitAssignment = async (req, res) => {
-  try {
-    const student = await Student.findOne({ user: req.user._id });
-    const assignment = await Assignment.findById(req.params.assignmentId);
-
-    if (!assignment) {
-      return res.status(404).json({
-        success: false,
-        error: 'Assignment not found'
-      });
-    }
-
-    // Check if already submitted
-    const existingSubmission = await Submission.findOne({
-      student: student._id,
-      assignment: assignment._id
-    });
-
-    if (existingSubmission) {
-      return res.status(400).json({
-        success: false,
-        error: 'You have already submitted this assignment'
-      });
-    }
-
-    // Check if file uploaded
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        error: 'Please upload a file'
-      });
-    }
-
-    const submission = await Submission.create({
-      assignment: assignment._id,
-      student: student._id,
-      fileUrl: `/uploads/submissions/${req.file.filename}`,
-      fileName: req.file.originalname
-    });
-
-    // Create notification for professor
-    await Notification.create({
-      recipient: assignment.professor,
-      sender: req.user._id,
-      title: 'New Assignment Submission',
-      message: `${req.user.firstName} ${req.user.lastName} submitted ${assignment.title}`,
-      type: 'submission',
-      relatedTo: {
-        model: 'Submission',
-        id: submission._id
-      }
-    });
-
-    res.status(201).json({
-      success: true,
-      data: submission
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
-  }
-};
-
-// @desc    Get student submissions
-// @route   GET /api/student/submissions
-// @access  Private (Student)
-const getSubmissions = async (req, res) => {
-  try {
-    const student = await Student.findOne({ user: req.user._id });
-
-    const submissions = await Submission.find({ student: student._id })
-      .sort('-submittedAt');
-
-    res.json({
-      success: true,
-      data: submissions
     });
   } catch (error) {
     res.status(500).json({
@@ -304,12 +160,12 @@ const getGrades = async (req, res) => {
       });
     }
 
-    // ✅ Fetch ALL grades (both validated and pending) for analysis
+    // Fetch ALL grades
     const allGrades = await Grade.find({
       student: student._id
     }).populate('module').sort('-createdAt');
 
-    // ✅ Filter: Only VALIDATED and PUBLISHED grades for student view
+    // Filter: Only VALIDATED and PUBLISHED grades for student view
     const validatedGrades = allGrades.filter(g => g.validated && g.isPublished);
 
     // Calculate semester average (only from validated grades)
@@ -337,7 +193,7 @@ const getGrades = async (req, res) => {
     res.json({
       success: true,
       data: {
-        grades: allGrades, // ✅ Return all grades (frontend will filter)
+        grades: allGrades,
         semesterAverage: semesterAverage.toFixed(2),
         yearlyAverage: yearlyAverage.toFixed(2)
       }
@@ -355,15 +211,31 @@ const getGrades = async (req, res) => {
 // @access  Private (Student)
 const getNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find({ recipient: req.user._id })
+    console.log('🔔 Fetching notifications for user:', req.user._id);
+
+    const notifications = await Notification.find({ 
+      recipient: req.user._id 
+    })
+      .populate('sender', 'firstName lastName email')
+      .populate('recipient', 'firstName lastName email')
       .sort('-createdAt')
       .limit(50);
 
+    console.log(`✅ Found ${notifications.length} notifications`);
+
+    const unreadCount = await Notification.countDocuments({
+      recipient: req.user._id,
+      read: false
+    });
+
     res.json({
       success: true,
+      count: notifications.length,
+      unreadCount,
       data: notifications
     });
   } catch (error) {
+    console.error('❌ Error fetching notifications:', error);
     res.status(500).json({
       success: false,
       error: error.message
@@ -410,9 +282,6 @@ module.exports = {
   getDashboard,
   getModules,
   getModuleDetails,
-  getAssignments,
-  submitAssignment,
-  getSubmissions,
   getGrades,
   getNotifications,
   markNotificationRead

@@ -41,12 +41,7 @@ router.post(
   uploadMaterial
 );
 
-// Assignments
-router.post('/assignments', createAssignment);
-router.get('/assignments/:id/submissions', getSubmissions);
 
-// Grading
-router.post('/grade/:submissionId', gradeSubmission);
 
 // Announcements
 router.post('/announcements', sendAnnouncement);

@@ -50,15 +50,24 @@ const studentService = {
     return response.data;
   },
 
-  // Get notifications
+  // ==================== NOTIFICATIONS ====================
   getNotifications: async () => {
-    const response = await API.get('/student/notifications');
+    const response = await API.get('/notifications');
     return response.data;
   },
 
-  // Mark notification as read
   markNotificationRead: async (notificationId) => {
-    const response = await API.patch(`/student/notifications/${notificationId}`);
+    const response = await API.patch(`/notifications/${notificationId}/read`);
+    return response.data;
+  },
+
+  markAllNotificationsRead: async () => {
+    const response = await API.patch('/notifications/read-all');
+    return response.data;
+  },
+
+  deleteNotification: async (notificationId) => {
+    const response = await API.delete(`/notifications/${notificationId}`);
     return response.data;
   }
 };

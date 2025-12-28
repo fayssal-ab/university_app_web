@@ -3,19 +3,15 @@ import { useAuth } from '../../context/AuthContext';
 import {
   FaHome,
   FaBook,
-  FaTasks,
   FaGraduationCap,
   FaBell,
-  FaFileAlt,
   FaBullhorn,
   FaUsers,
   FaUserPlus,
   FaFileExport,
   FaCheckCircle,
   FaUniversity,
-  FaUserTie,
-  FaUpload,
-  FaEye
+  FaUserTie
 } from 'react-icons/fa';
 import { useState } from 'react';
 
@@ -27,7 +23,6 @@ const Sidebar = ({ isOpen, onClose }) => {
   const studentLinks = [
     { name: 'Dashboard', path: '/student/dashboard', icon: FaHome },
     { name: 'My Modules', path: '/student/modules', icon: FaBook },
-    { name: 'Assignments', path: '/student/assignments', icon: FaTasks },
     { name: 'My Grades', path: '/student/grades', icon: FaGraduationCap },
     { name: 'Notifications', path: '/student/notifications', icon: FaBell }
   ];
@@ -35,7 +30,6 @@ const Sidebar = ({ isOpen, onClose }) => {
   const professorLinks = [
     { name: 'Dashboard', path: '/professor/dashboard', icon: FaHome },
     { name: 'My Modules', path: '/professor/modules', icon: FaBook },
-    { name: 'Create Assignment', path: '/professor/assignments/create', icon: FaTasks },
     { name: 'Announcements', path: '/professor/announcements', icon: FaBullhorn }
   ];
 

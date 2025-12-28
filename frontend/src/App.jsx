@@ -9,8 +9,6 @@ import Login from './pages/Login';
 import StudentDashboard from './pages/student/StudentDashboard';
 import StudentModules from './pages/student/MyModules';
 import ModuleDetails from './pages/student/ModuleDetails';
-import Assignments from './pages/student/Assignments';
-import SubmitAssignment from './pages/student/SubmitAssignment';
 import MyGrades from './pages/student/MyGrades';
 import Notifications from './pages/student/Notifications';
 
@@ -19,8 +17,6 @@ import ProfessorDashboard from './pages/professor/ProfessorDashboard';
 import ProfessorModules from './pages/professor/MyModules';
 import ManageModule from './pages/professor/ManageModule';
 import ManageGrades from './pages/professor/ManageGrades';
-import CreateAssignment from './pages/professor/CreateAssignment';
-import ViewSubmissions from './pages/professor/ViewSubmissions';
 import Announcements from './pages/professor/Announcements';
 
 // Admin Pages
@@ -33,7 +29,7 @@ import EditStudent from './pages/admin/EditStudent';
 import ManageProfessors from './pages/admin/ManageProfessors';
 import ManageModules from './pages/admin/ManageModules';
 import EnrollStudents from './pages/admin/EnrollStudents';
-import ValidateGrades from './pages/admin/ValidateGrades'; // ✅ IMPORTANT
+import ValidateGrades from './pages/admin/ValidateGrades';
 import ExportGrades from './pages/admin/ExportGrades';
 
 function App() {
@@ -66,22 +62,6 @@ function App() {
             element={
               <RoleRoute allowedRoles={['student']}>
                 <ModuleDetails />
-              </RoleRoute>
-            }
-          />
-          <Route
-            path="/student/assignments"
-            element={
-              <RoleRoute allowedRoles={['student']}>
-                <Assignments />
-              </RoleRoute>
-            }
-          />
-          <Route
-            path="/student/submit/:assignmentId"
-            element={
-              <RoleRoute allowedRoles={['student']}>
-                <SubmitAssignment />
               </RoleRoute>
             }
           />
@@ -132,22 +112,6 @@ function App() {
             element={
               <RoleRoute allowedRoles={['professor']}>
                 <ManageGrades />
-              </RoleRoute>
-            }
-          />
-          <Route
-            path="/professor/assignments/create"
-            element={
-              <RoleRoute allowedRoles={['professor']}>
-                <CreateAssignment />
-              </RoleRoute>
-            }
-          />
-          <Route
-            path="/professor/assignments/:assignmentId/submissions"
-            element={
-              <RoleRoute allowedRoles={['professor']}>
-                <ViewSubmissions />
               </RoleRoute>
             }
           />
@@ -233,7 +197,6 @@ function App() {
               </RoleRoute>
             }
           />
-          {/* ✅ VALIDATE GRADES ROUTE - IMPORTANT */}
           <Route
             path="/admin/grades"
             element={

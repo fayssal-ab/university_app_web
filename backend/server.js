@@ -36,7 +36,6 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/student', require('./routes/studentRoutes'));
 app.use('/api/professor', require('./routes/professorRoutes'));
 app.use('/api/modules', require('./routes/moduleRoutes'));
-app.use('/api/assignments', require('./routes/assignmentRoutes'));
 app.use('/api/grades', require('./routes/gradeRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/branches', require('./routes/branchRoutes'));

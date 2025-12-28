@@ -26,15 +26,7 @@ router.get('/dashboard', getDashboard);
 router.get('/modules', getModules);
 router.get('/modules/:id', getModuleDetails);
 
-// Assignments
-router.get('/assignments', getAssignments);
-router.post(
-  '/submit/:assignmentId',
-  uploadSingle('submission'),
-  handleUploadError,
-  submitAssignment
-);
-router.get('/submissions', getSubmissions);
+
 
 // Grades
 router.get('/grades', getGrades);

@@ -8,69 +8,58 @@ const notificationSchema = new mongoose.Schema({
   },
   sender: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    default: null
   },
   title: {
     type: String,
-    required: [true, 'Notification title is required'],
-    trim: true
+    required: true
   },
   message: {
     type: String,
-    required: [true, 'Notification message is required'],
-    trim: true
+    required: true
   },
   type: {
     type: String,
-    enum: ['announcement', 'grade', 'assignment', 'submission', 'general', 'system'],
-    required: true,
+    enum: ['assignment', 'grade', 'announcement', 'submission', 'general'],
     default: 'general'
-  },
-  relatedTo: {
-    model: {
-      type: String,
-      enum: ['Assignment', 'Grade', 'Module', 'Submission', null]
-    },
-    id: {
-      type: mongoose.Schema.Types.ObjectId
-    }
   },
   read: {
     type: Boolean,
     default: false
   },
   readAt: {
-    type: Date
+    type: Date,
+    default: null
   },
-  priority: {
-    type: String,
-    enum: ['low', 'medium', 'high', 'urgent'],
-    default: 'medium'
+  relatedTo: {
+    model: {
+      type: String,
+      enum: ['Assignment', 'Grade', 'Module', 'Submission']
+    },
+    id: {
+      type: mongoose.Schema.Types.ObjectId
+    }
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+    index: true
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
-}, {
-  timestamps: true
 });
 
-// Mark as read
-notificationSchema.methods.markAsRead = function() {
+// Auto-delete old notifications (30 days)
+notificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 2592000 });
+
+// Instance method to mark as read
+notificationSchema.methods.markAsRead = async function() {
   this.read = true;
-  this.readAt = Date.now();
-  return this.save();
+  this.readAt = new Date();
+  return await this.save();
 };
-
-// Populate recipient and sender
-notificationSchema.pre(/^find/, function(next) {
-  this.populate({
-    path: 'recipient',
-    select: 'firstName lastName email role'
-  }).populate({
-    path: 'sender',
-    select: 'firstName lastName email role'
-  });
-  next();
-});
-
-// Index for faster queries
-notificationSchema.index({ recipient: 1, read: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Notification', notificationSchema);

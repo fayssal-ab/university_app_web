@@ -1,12 +1,8 @@
 const Notification = require('../models/Notification');
 
-// @desc    Get user notifications
-// @route   GET /api/notifications
-// @access  Private
 const getNotifications = async (req, res) => {
   try {
     const { read, type, limit = 50 } = req.query;
-
     let query = { recipient: req.user._id };
 
     if (read !== undefined) {
@@ -19,7 +15,8 @@ const getNotifications = async (req, res) => {
 
     const notifications = await Notification.find(query)
       .sort('-createdAt')
-      .limit(parseInt(limit));
+      .limit(parseInt(limit))
+      .populate('sender', 'firstName lastName email');
 
     const unreadCount = await Notification.countDocuments({
       recipient: req.user._id,
@@ -40,9 +37,6 @@ const getNotifications = async (req, res) => {
   }
 };
 
-// @desc    Mark notification as read
-// @route   PATCH /api/notifications/:id/read
-// @access  Private
 const markAsRead = async (req, res) => {
   try {
     const notification = await Notification.findById(req.params.id);
@@ -61,7 +55,9 @@ const markAsRead = async (req, res) => {
       });
     }
 
-    await notification.markAsRead();
+    notification.read = true;
+    notification.readAt = new Date();
+    await notification.save();
 
     res.json({
       success: true,
@@ -75,14 +71,11 @@ const markAsRead = async (req, res) => {
   }
 };
 
-// @desc    Mark all notifications as read
-// @route   PATCH /api/notifications/read-all
-// @access  Private
 const markAllAsRead = async (req, res) => {
   try {
     await Notification.updateMany(
       { recipient: req.user._id, read: false },
-      { read: true, readAt: Date.now() }
+      { read: true, readAt: new Date() }
     );
 
     res.json({
@@ -97,9 +90,6 @@ const markAllAsRead = async (req, res) => {
   }
 };
 
-// @desc    Delete notification
-// @route   DELETE /api/notifications/:id
-// @access  Private
 const deleteNotification = async (req, res) => {
   try {
     const notification = await Notification.findById(req.params.id);
@@ -118,7 +108,7 @@ const deleteNotification = async (req, res) => {
       });
     }
 
-    await notification.deleteOne();
+    await Notification.deleteOne({ _id: req.params.id });
 
     res.json({
       success: true,
