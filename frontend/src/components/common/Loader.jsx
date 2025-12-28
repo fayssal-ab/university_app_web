@@ -48,20 +48,10 @@ const Loader = () => {
           </div>
           
           {/* شريط التقدم البسيط */}
-          <div className="w-48 h-1 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full w-2/3 animate-pulse">
-              <style jsx>{`
-                @keyframes shimmer {
-                  0% { opacity: 0.7; }
-                  50% { opacity: 1; }
-                  100% { opacity: 0.7; }
-                }
-                .animate-pulse {
-                  animation: shimmer 1.5s ease-in-out infinite;
-                }
-              `}</style>
-            </div>
-          </div>
+<div className="w-48 h-1 bg-gray-200 rounded-full overflow-hidden">
+  <div className="h-full w-2/3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full animate-pulse"></div>
+</div>
+
         </div>
       </div>
     </div>

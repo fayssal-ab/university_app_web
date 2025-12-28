@@ -2,8 +2,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import RoleRoute from './utils/RoleRoute';
 
-// Pages
+// Public Pages
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import Profile from './pages/Profile';
+import Settings from './pages/Settings';
 
 // Student Pages
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -37,8 +40,28 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Public Route */}
+          
+          {/* ========== PUBLIC ROUTES ========== */}
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+
+          {/* ========== PROTECTED ROUTES - ALL USERS ========== */}
+          <Route
+            path="/profile"
+            element={
+              <RoleRoute allowedRoles={['student', 'professor', 'admin']}>
+                <Profile />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <RoleRoute allowedRoles={['student', 'professor', 'admin']}>
+                <Settings />
+              </RoleRoute>
+            }
+          />
 
           {/* ========== STUDENT ROUTES ========== */}
           <Route
@@ -214,7 +237,7 @@ function App() {
             }
           />
 
-          {/* Default Redirects */}
+          {/* ========== DEFAULT REDIRECTS ========== */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

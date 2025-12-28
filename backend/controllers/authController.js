@@ -176,8 +176,6 @@ const getMe = async (req, res) => {
 // @access  Private
 const logout = async (req, res) => {
   try {
-    // In JWT, logout is handled on client side by removing token
-    // But we can log the action here if needed
     res.json({
       success: true,
       message: 'Logged out successfully'
@@ -234,10 +232,119 @@ const updatePassword = async (req, res) => {
   }
 };
 
+// @desc    Update user profile
+// @route   PUT /api/auth/updateprofile
+// @access  Private
+const updateProfile = async (req, res) => {
+  try {
+    const { firstName, lastName, phoneNumber, address, profilePicture } = req.body;
+
+    console.log('========================================');
+    console.log('📝 Update profile request received');
+    console.log('User ID:', req.user._id);
+    console.log('Request body keys:', Object.keys(req.body));
+    console.log('========================================');
+
+    // Find user
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      console.error('❌ User not found:', req.user._id);
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    console.log('✅ User found:', user.email, '- Role:', user.role);
+
+    // Update basic user fields
+    if (firstName) user.firstName = firstName;
+    if (lastName) user.lastName = lastName;
+    if (profilePicture !== undefined) {
+      user.profilePicture = profilePicture;
+      console.log('📸 Updating profile picture (length):', profilePicture?.length || 0);
+    }
+    
+    // Save user
+    console.log('💾 Saving user...');
+    await user.save();
+    console.log('✅ User saved successfully');
+
+    // Update role-specific profile (phoneNumber & address)
+    try {
+      if (user.role === 'student') {
+        console.log('👨‍🎓 Looking for student profile...');
+        const student = await Student.findOne({ user: user._id });
+        
+        if (student) {
+          console.log('✅ Student found, updating...');
+          if (phoneNumber !== undefined) student.phoneNumber = phoneNumber;
+          if (address !== undefined) student.address = address;
+          await student.save();
+          console.log('✅ Student profile updated');
+        } else {
+          console.log('⚠️ Student profile not found, skipping...');
+        }
+      } else if (user.role === 'professor') {
+        console.log('👨‍🏫 Looking for professor profile...');
+        const professor = await Professor.findOne({ user: user._id });
+        
+        if (professor) {
+          console.log('✅ Professor found, updating...');
+          if (phoneNumber !== undefined) professor.phoneNumber = phoneNumber;
+          if (address !== undefined) professor.address = address;
+          await professor.save();
+          console.log('✅ Professor profile updated');
+        } else {
+          console.log('⚠️ Professor profile not found, skipping...');
+        }
+      }
+    } catch (profileError) {
+      console.error('⚠️ Error updating role profile (non-critical):', profileError.message);
+      // Continue anyway - basic profile was updated
+    }
+
+    const responseData = {
+      _id: user._id,
+      email: user.email,
+      role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      profilePicture: user.profilePicture
+    };
+
+    console.log('✅ Profile update completed successfully');
+    console.log('========================================');
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: responseData
+    });
+  } catch (error) {
+    console.error('========================================');
+    console.error('❌ CRITICAL UPDATE PROFILE ERROR');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    if (error.errors) {
+      console.error('Validation errors:', error.errors);
+    }
+    console.error('Full error:', error);
+    console.error('========================================');
+    
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Server error while updating profile'
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
   getMe,
   logout,
-  updatePassword
+  updatePassword,
+  updateProfile
 };

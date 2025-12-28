@@ -38,6 +38,32 @@ const authService = {
     return response.data;
   },
 
+  // Update profile (FIXED)
+  updateProfile: async (profileData) => {
+    try {
+      const response = await API.put('/auth/updateprofile', profileData);
+      
+      if (response.data.success) {
+        // Get current user from localStorage
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        
+        // Merge updated data
+        const updatedUser = {
+          ...currentUser,
+          ...response.data.data
+        };
+        
+        // Update localStorage
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Update profile service error:', error);
+      throw error;
+    }
+  },
+
   // Get stored user
   getCurrentUser: () => {
     const user = localStorage.getItem('user');

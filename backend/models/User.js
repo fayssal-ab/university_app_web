@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema({
   },
   profilePicture: {
     type: String,
-    default: null
+    default: ''
   },
   isActive: {
     type: Boolean,
@@ -43,12 +43,14 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Hash password before saving
-userSchema.pre('save', async function(next) {
+// Hash password before saving - VERSION SANS CALLBACK
+userSchema.pre('save', async function() {
+  // Si le password n'est pas modifié, on ne fait rien
   if (!this.isModified('password')) {
-    next();
+    return;
   }
   
+  // Hash le password
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
@@ -58,7 +60,7 @@ userSchema.methods.comparePassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Get full name
+// Get full name virtual
 userSchema.virtual('fullName').get(function() {
   return `${this.firstName} ${this.lastName}`;
 });
