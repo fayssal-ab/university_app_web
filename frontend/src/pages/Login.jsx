@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FaUser, FaLock, FaSpinner } from 'react-icons/fa';
 
@@ -137,6 +137,16 @@ const Login = () => {
                 'Se connecter'
               )}
             </button>
+
+            {/* Forgot Password Link */}
+            <div className="text-center mt-4">
+              <Link 
+                to="/forgot-password" 
+                className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition"
+              >
+                Mot de passe oublié?
+              </Link>
+            </div>
           </form>
         </div>
 
